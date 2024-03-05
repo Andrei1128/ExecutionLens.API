@@ -47,17 +47,5 @@ namespace PostMortem.API.Controllers
         {
             return Ok();
         }
-
-        [HttpGet] //ofera informatii pentru creare unei diagrame ce contine nr de requesturi predictionate dintr-un anumit punct de pe harta(pt orice endpoint sau unul anume, pt o anumita perioada sau oricare)
-        public async Task<IActionResult> GetAIGeolocationPredictions()
-        {
-            return Ok();
-        }
-
-        [HttpGet] //ofera informatii pentru creare unei diagrame ce contine nr de requesturi predictionate per endpoint(pt o anumita perioada sau oricare)
-        public async Task<IActionResult> GetAIRequestsCountPredictions()
-        {
-            return Ok();
-        }
     }
 }
