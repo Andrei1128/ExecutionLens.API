@@ -1,5 +1,5 @@
 ﻿namespace PostMortem.Application.Contracts.Application;
 
-internal interface IDiagramService
+public interface IDiagramService
 {
 }

@@ -1,5 +1,5 @@
 ﻿namespace PostMortem.Application.Contracts.Persistance;
 
-internal interface ILogRepository
+public interface ILogRepository
 {
 }

@@ -11,4 +11,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PostMortem.Application\PostMortem.Application.csproj" />
+    <ProjectReference Include="..\PostMortem.Domain\PostMortem.Domain.csproj" />
+    <ProjectReference Include="..\PostMortem.Persistance\PostMortem.Persistance.csproj" />
+  </ItemGroup>
+
 </Project>
