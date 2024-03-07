@@ -2,6 +2,6 @@
 
 namespace PostMortem.Application.Implementations;
 
-internal class SearchService : ISearchService
+internal class LogsService : ILogsService
 {
 }

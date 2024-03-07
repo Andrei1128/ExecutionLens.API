@@ -9,7 +9,7 @@ public static partial class ServiceCollection
     public static void AddApplicationServices(this IServiceCollection services)
     {
         services.AddScoped<IDiagramService,DiagramService>();
-        services.AddScoped<ISearchService, SearchService>();
+        services.AddScoped<ILogsService, LogsService>();
         services.AddScoped<IMetricsService, MetricsService>();
         services.AddScoped<IPredictionService, PredictionService>();
     }

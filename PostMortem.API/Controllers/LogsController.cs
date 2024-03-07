@@ -5,18 +5,25 @@ namespace PostMortem.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class SearchController(ISearchService _searchService) : ControllerBase
+public class LogsController(ILogsService _searchService) : ControllerBase
 {
     [HttpGet] //permite cautare de tip full text search
-    [Route(nameof(SearchLogs))]
+    [Route("SearchLogs")]
     public async Task<IActionResult> SearchLogs()
     {
         return Ok();
     }
 
     [HttpGet] //cautare pentru un anumit log pe baza de id
-    [Route(nameof(GetLog))]
-    public async Task<IActionResult> GetLog()
+    [Route("GetLog/{logId}")]
+    public async Task<IActionResult> GetLog(string logId)
+    {
+        return Ok();
+    }
+
+    [HttpGet]
+    [Route("GetEndpoints")]
+    public async Task<IActionResult> GetEndpoints()
     {
         return Ok();
     }

@@ -2,12 +2,12 @@
 
 public class AppSettings
 {
-    public const string Key = "appsettings";
+    public const string Key = "AppSettings";
     public Elastic Elastic { get; set; } = default!;
 }
 
 public class Elastic
 {
-    public string Uri = string.Empty;
-    public string IndexName = string.Empty;
+    public string Uri { get; set; } = string.Empty;
+    public string IndexName { get; set; } = string.Empty;
 }
