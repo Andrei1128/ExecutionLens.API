@@ -2,8 +2,8 @@
 
 public class Filters
 {
-    public string ControllerName { get; set; } = string.Empty;
-    public string EndpointName { get; set; } = string.Empty;
+    public string[] Controllers { get; set; } = [];
+    public string[] Endpoints { get; set; } = [];
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
 

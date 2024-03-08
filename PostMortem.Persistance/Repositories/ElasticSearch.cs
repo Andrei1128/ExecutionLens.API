@@ -30,34 +30,39 @@ internal class ElasticSearch : ILogRepository
 
     public async Task<IEnumerable<EndpointCallsCount>> GetEndpointsCallsCount(Filters filters)
     {
-        var searchDescriptor = new SearchDescriptor<MethodLog>()
-            .Size(0)
-            .BetweenDates(filters.StartDate!.Value, filters.EndDate!.Value)
-            .WithControllerIfExists(filters.ControllerName)
-            .WithEndpointIfExists(filters.EndpointName)
-            .Aggregations(a => a
-                .Terms("class_agg", t => t
-                    .Field(f => f.Entry.Class)
-                    .Aggregations(aa => aa
-                        .Terms("method_agg", tt => tt
-                            .Field(ff => ff.Entry.Method)
-                        )
-                    )
-                )
-            );
+        throw new NotImplementedException();
+        //var response = await _elasticClient.SearchAsync<MethodLog>(s => s
+        //    .Size(0)
+        //    .BetweenDates(filters.StartDate!.Value, filters.EndDate!.Value)
+        //    .WithControllerIfExists(filters.Cont)
+        //    .WithEndpointIfExists(filters.EndpointName)
+        //    .Aggregations(a => a
+        //        .Terms("class_agg", t => t
+        //            .Field(f => f.Entry.Class)
+        //            .Aggregations(aa => aa
+        //                .Terms("method_agg", tt => tt
+        //                    .Field(ff => ff.Entry.Method)
+        //                )
+        //            )
+        //        )
+        //    )
+        //);
 
-        var searchResponse = await _elasticClient.SearchAsync<MethodLog>(searchDescriptor);
+        //var classAgg = response.Aggregations.Terms("class_agg");
 
-        var classAgg = searchResponse.Aggregations.Terms("class_agg");
+        //return classAgg.Buckets.SelectMany(
+        //    classBucket =>
+        //    classBucket.Terms("method_agg").Buckets.Select(
+        //        methodBucket => new EndpointCallsCount
+        //        {
+        //            Endpoint = $"{classBucket.Key}:{methodBucket.Key}",
+        //            Count = methodBucket.DocCount
+        //        })
+        //);
+    }
 
-        return classAgg.Buckets.SelectMany(
-            classBucket =>
-            classBucket.Terms("method_agg").Buckets.Select(
-                methodBucket => new EndpointCallsCount
-                {
-                    Endpoint = $"{classBucket.Key}:{methodBucket.Key}",
-                    Count = methodBucket.DocCount
-                })
-        );
+    public Task<IEnumerable<EndpointGroupExecutionTime>> GetEndpointsExecutionsTime(Filters filters)
+    {
+        throw new NotImplementedException();
     }
 }

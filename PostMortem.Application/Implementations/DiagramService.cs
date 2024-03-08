@@ -1,5 +1,6 @@
 ﻿using PostMortem.Application.Contracts.Application;
 using PostMortem.Application.Contracts.Persistance;
+using PostMortem.Domain;
 using PostMortem.Domain.Common;
 using PostMortem.Domain.DTOs;
 using PostMortem.Domain.Models;
@@ -22,47 +23,27 @@ internal class DiagramService(ILogRepository _logRepository) : IDiagramService
     {
         var log = await _logRepository.GetLog(logId);
 
-        return log is null ? [] : CalculateExecutionTime(log);
-    }
-
-    #region CalculateExecutionTime
-    private List<MethodExecutionTime> CalculateExecutionTime(MethodLog methodLog)
-    {
-        var executionTimes = new List<MethodExecutionTime>();
-
-        CalculateExecutionTimeRecursive(methodLog, executionTimes);
-
-        return executionTimes;
-    }
-    private void CalculateExecutionTimeRecursive(MethodLog methodLog, List<MethodExecutionTime> executionTimes)
-    {
-        var entryTime = methodLog.Entry.Time;
-        var exitTime = methodLog.Exit.Time;
-        TimeSpan executionTime = exitTime - entryTime;
-
-        var methodExecutionTime = new MethodExecutionTime
+        if (log is not null)
         {
-            MethodName = methodLog.Entry.Method,
-            ExecutionTime = executionTime
-        };
+            var executionTimes = new List<MethodExecutionTime>();
 
-        executionTimes.Add(methodExecutionTime);
+            executionTimes.CalculateExecutionTime(log);
 
-        foreach (var interaction in methodLog.Interactions)
-        {
-            CalculateExecutionTimeRecursive(interaction, executionTimes);
+            return executionTimes;
         }
+
+        return [];
     }
-    #endregion
+
 
     public async Task<IEnumerable<EndpointCallsCount>> GetEndpointsCallsCount(Filters filters)
     {
         return await _logRepository.GetEndpointsCallsCount(filters);
     }
 
-    public async Task<object> GetRequestsExecutionTimeOverview(Filters filters)
+    public async Task<IEnumerable<EndpointGroupExecutionTime>> GetRequestsExecutionTimeOverview(Filters filters)
     {
-        throw new NotImplementedException();
+        return await _logRepository.GetEndpointsExecutionsTime(filters);
     }
 
     public async Task<object> GetRequestsGeolocation(Filters filters)

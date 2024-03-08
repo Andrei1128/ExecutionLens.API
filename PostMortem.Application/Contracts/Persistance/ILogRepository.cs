@@ -8,4 +8,5 @@ public interface ILogRepository
 {
     Task<MethodLog?> GetLog(string logId);
     Task<IEnumerable<EndpointCallsCount>> GetEndpointsCallsCount(Filters filters);
+    Task<IEnumerable<EndpointGroupExecutionTime>> GetEndpointsExecutionsTime(Filters filters);
 }

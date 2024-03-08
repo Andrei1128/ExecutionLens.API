@@ -1,8 +1,10 @@
 ﻿namespace PostMortem.Domain.DTOs;
 
-public class EndpointCallsCount
+public class EndpointGroupExecutionTime
 {
     public string Controller { get; set; } = string.Empty;
     public string Endpoint { get; set; } = string.Empty;
-    public long Count { get; set; }
+    public TimeSpan Min { get; set; }
+    public TimeSpan Avg { get; set; }
+    public TimeSpan Max { get; set; }
 }

@@ -7,21 +7,21 @@ namespace PostMortem.API.Controllers;
 [ApiController]
 public class MetricsController(IMetricsService _metricsService) : ControllerBase
 {
-    [HttpPost] //creaza metrics-uri custom precum ex: nr de cumparari zilnice pentru un anumit produs 
+    [HttpPost] 
     [Route("CreateMetric")]
     public async Task<IActionResult> CreateMetric()
     {
         return Ok();
     }
 
-    [HttpGet] //preia metrics-urile create
+    [HttpGet] 
     [Route("GetMetrics")]
     public async Task<IActionResult> GetMetrics()
     {
         return Ok();
     }
 
-    [HttpDelete] //preia metrics-urile create
+    [HttpDelete] 
     [Route("DeleteMetric/{metricId}")]
     public async Task<IActionResult> DeleteMetric(string metricId)
     {

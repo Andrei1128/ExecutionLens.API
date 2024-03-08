@@ -1,8 +1,8 @@
 ﻿namespace PostMortem.Domain.DTOs;
 
-public class MethodExecutionTime
+public class MethodExceptionsCount
 {
     public string Class { get; set; } = string.Empty;
     public string Method { get; set; } = string.Empty;
-    public TimeSpan ExecutionTime { get; set; }
+    public long Count { get; set; }
 }

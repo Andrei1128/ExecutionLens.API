@@ -3,7 +3,7 @@ using PostMortem.Domain.Models;
 
 namespace PostMortem.Persistance.Extensions;
 
-public static class SearchDescriptorExtensions
+public static class ElasticExtensions
 {
     public static SearchDescriptor<T> BetweenDates<T>(this SearchDescriptor<T> searchDescriptor, DateTime dateStart, DateTime dateEnd) where T : MethodLog
     {
