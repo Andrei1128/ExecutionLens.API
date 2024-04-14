@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PostMortem.Application.Contracts.Application;
+using PostMortem.Application.Contracts.Persistance;
 
 namespace PostMortem.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class LogsController(ILogsService _searchService) : ControllerBase
+public class LogsController(ILogRepository _logRepository) : ControllerBase
 {
     [HttpGet] 
     [Route("SearchLogs")]
@@ -15,10 +16,10 @@ public class LogsController(ILogsService _searchService) : ControllerBase
     }
 
     [HttpGet] 
-    [Route("GetLog/{logId}")]
+    [Route("{logId}")]
     public async Task<IActionResult> GetLog(string logId)
     {
-        return Ok();
+        return Ok(await _logRepository.GetLog(logId));
     }
 
     [HttpGet]

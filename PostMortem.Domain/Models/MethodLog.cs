@@ -2,37 +2,26 @@
 
 public class MethodLog
 {
-    public MethodEntry Entry { get; set; } = default!;
-    public MethodExit Exit { get; set; } = default!;
+    public string Class { get; set; } = string.Empty;
+    public string Method { get; set; } = string.Empty;
+    public bool HasException { get; set; } = false;
+
+    public DateTime EntryTime { get; set; } = DateTime.Now;
+    public DateTime ExitTime { get; set; } = DateTime.Now;
+
+    public string[]? InputTypes { get; set; } = null;
+    public object[]? Input { get; set; } = null;
+    public string? OutputType { get; set; } = null;
+    public object? Output { get; set; } = null;
+
+    public List<InformationLog> Informations { get; set; } = [];
     public List<MethodLog> Interactions { get; set; } = [];
 }
-//public class MethodEntry
-//{
-//    public DateTime Time { get; set; } = DateTime.Now;
-//    public string Class { get; set; } = string.Empty;
-//    public string Method { get; set; } = string.Empty;
-//    public object[]? Input { get; set; } = null;
-//}
-//public class MethodExit
-//{
-//    public DateTime Time { get; set; } = DateTime.Now;
-//    public bool HasException;
-//    public object? Output { get; set; } = null;
-//}
 
-
-//public class ClassObject
-//{
-//    public string Class { get; set; } = string.Empty;
-//    public List<ActionObject> Actions { get; set; } = [];
-//}
-
-//public class ActionObject
-//{
-//    public ClassObject Target { get; set; } = default!;
-//    public string Method { get; set; } = string.Empty;
-//    public TimeSpan ExecutionTime { get; set; } = TimeSpan.Zero;
-//    public bool HasException { get; set; }
-//    public object[]? Input { get; set; } = null;
-//    public object? Output { get; set; } = null;
-//}
+public class InformationLog
+{
+    public DateTime Timestamp { get; set; } = DateTime.Now;
+    public string? LogLevel { get; set; } = null;
+    public string? Message { get; set; } = null;
+    public Exception? Exception { get; set; } = null;
+}

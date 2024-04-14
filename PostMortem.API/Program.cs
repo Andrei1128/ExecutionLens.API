@@ -10,6 +10,17 @@ builder.Services
 
 builder.Services.AddControllers();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("cors",
+                          policy =>
+                          {
+                              policy.WithOrigins("http://localhost:4200")
+                                                  .AllowAnyHeader()
+                                                  .AllowAnyMethod();
+                          });
+});
+
 builder.Services.AddApplicationServices();
 builder.Services.AddPersistanceServices();
 
@@ -25,6 +36,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("cors");
+
 
 app.UseAuthorization();
 

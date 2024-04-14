@@ -9,9 +9,9 @@ public static class Extensions
     {
         executionTimes.Add(new MethodExecutionTime
         {
-            Class = methodLog.Entry.Class,
-            Method = methodLog.Entry.Method,
-            ExecutionTime = methodLog.Entry.Time - methodLog.Exit.Time
+            //Class = methodLog.Entry.Class,
+            //Method = methodLog.Entry.Method,
+            //ExecutionTime = methodLog.Entry.Time - methodLog.Exit.Time
         });
 
         foreach (var interaction in methodLog.Interactions)
