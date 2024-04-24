@@ -10,10 +10,8 @@ public class MethodLog
     public DateTime ExitTime { get; set; } = DateTime.Now;
 
     public bool HasException { get; set; } = false;
-    public string[]? InputTypes { get; set; } = null;
-    public object[]? Input { get; set; } = null;
-    public string? OutputType { get; set; } = null;
-    public object? Output { get; set; } = null;
+    public Property[]? Input { get; set; } = null;
+    public Property? Output { get; set; } = null;
 
     public List<InformationLog> Informations { get; set; } = [];
     public List<MethodLog> Interactions { get; set; } = [];
