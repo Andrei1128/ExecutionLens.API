@@ -2,6 +2,7 @@
 
 public class MethodLog
 {
+    public string? NodePath { get; set; } = null;
     public string Class { get; set; } = string.Empty;
     public string Method { get; set; } = string.Empty;
 

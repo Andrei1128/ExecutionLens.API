@@ -1,9 +1,12 @@
-﻿using ExecutionLens.API.DOMAIN.DTOs;
+﻿using ExecutionLens.API.DOMAIN.Common;
+using ExecutionLens.API.DOMAIN.DTOs;
 using ExecutionLens.API.DOMAIN.Models;
 using ExecutionLens.API.DOMAIN.Utilities;
 using ExecutionLens.API.PERSISTENCE.Contracts;
+using ExecutionLens.API.PERSISTENCE.Extensions;
 using Microsoft.Extensions.Options;
 using Nest;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace PostMortem.Persistance.Repositories;
@@ -26,17 +29,29 @@ internal class LogRepository : ILogRepository
         _elasticClient = new ElasticClient(connectionSettings);
     }
 
-    public async Task<List<ExceptionCount>> GetExceptionsCount()
+    private IEnumerable<MethodLog> GetAllNodes(string rootId)
     {
-        var response = await _elasticClient.SearchAsync<MethodLog>(s => s
-            .Size(0) // No documents are needed in the response, just aggregations
+        var response = _elasticClient.Search<MethodLog>(s => s
             .Query(q => q
                 .Bool(b => b
-                    .Filter(f => f
-                        .Term(t => t.HasException, true) // Only documents where HasException is true
+                    .Should(
+                        sh => sh.Ids(i => i.Values(rootId)), 
+                        sh => sh.Prefix(p => p.NodePath, rootId)
                     )
                 )
             )
+        );
+
+        return response.Documents;
+    }
+
+    public async Task<List<ExceptionCount>> GetExceptionsCount(GraphFilters filters)
+    {
+        var initialFilter = new TermQuery { Field = Infer.Field<MethodLog>(f => f.HasException), Value = true };
+
+        var response = await _elasticClient.SearchAsync<MethodLog>(s => s
+            .Size(0)
+            .ApplyFilters(filters, initialFilter)
             .Aggregations(a => a
                 .Terms("group_by_class", group => group
                     .Field(f => f.Class.Suffix("keyword"))
@@ -75,10 +90,11 @@ internal class LogRepository : ILogRepository
         return exceptionCounts;
     }
 
-    public async Task<List<ExecutionTimes>> GetExecutionTimes()
+    public async Task<List<ExecutionTimes>> GetExecutionTimes(GraphFilters filters)
     {
         var response = await  _elasticClient.SearchAsync<MethodLog>(s => s
     .Size(0)  // No documents are needed in the response, only aggregations
+    .ApplyFilters(filters)
     .Aggregations(a => a
         .Terms("group_by_class", classAgg => classAgg
             .Field(f => f.Class.Suffix("keyword"))
@@ -154,36 +170,43 @@ internal class LogRepository : ILogRepository
 
     public async Task<MethodLog?> GetLog(string logId)
     {
-        var root = await _elasticClient.GetAsync<MethodLog>(logId, idx => idx.Index(_index));
-        if (!root.Found)
+        var result = await _elasticClient.GetAsync<MethodLog>(logId, idx => idx.Index(_index));
+
+        if (!result.Found)
         {
             return null;
         }
 
-        var tree = root.Source;
-        await PopulateChildren(tree, root.Id);
-        return tree;
+        var node = result.Source;
+
+        bool isRoot = node.NodePath is null;
+
+        if (isRoot)
+        {
+            await PopulateChildren(node, logId);
+            return node;
+        }
+        else
+        {
+            string rootId = node.NodePath!.Split('/').First();
+
+            var rootResult = await _elasticClient.GetAsync<MethodLog>(rootId, idx => idx.Index(_index));
+            var root = rootResult.Source;
+
+            await PopulateChildren(root, rootResult.Id);
+            return root;
+        }
     }
 
-    private async Task PopulateChildren(MethodLog parent, string parentId)
+    private async Task PopulateChildren(MethodLog parent, string path)
     {
-        var result = (await _elasticClient.SearchAsync<ClosureEntry>(s => 
-            s.Query(q => 
-                q.Term(t => t.ParentId, parentId))
-            .Index($"{_index}_closure")));
-
-        var source = result.Hits.FirstOrDefault()?.Source;
-
-        var childIds = result.Documents.Select(doc => doc.ChildId);
-
-        if (!childIds.Any())
-        {
-            return;
-        }
-
         var searchResponse = await _elasticClient.SearchAsync<MethodLog>(s => s
-            .Query(q => q.Ids(i => i.Values(childIds)))
-            .Index(_index));
+            .Index(_index)
+            .Query(q => q
+                .Term(t => t.Field(f => f.NodePath.Suffix("keyword")).Value(path))
+            )
+        );
+
 
         if (searchResponse.Documents != null)
         {
@@ -196,15 +219,16 @@ internal class LogRepository : ILogRepository
 
             for(int i = 0; i < parent.Interactions.Count; i++)
             {
-                await PopulateChildren(parent.Interactions[i], currentNodesIds[i]);
+                await PopulateChildren(parent.Interactions[i], $"{path}/{currentNodesIds[i]}");
             }
         }
     }
 
-    public async Task<List<RequestCount>> GetRequestsCount()
+    public async Task<List<RequestCount>> GetRequestsCount(GraphFilters filters)
     {
         var response = await _elasticClient.SearchAsync<MethodLog>(s => s
-            .Size(0) // Set size to 0 since we only want aggregation data
+            .Size(0)
+            .ApplyFilters(filters)
             .Aggregations(a => a
                 .Terms("group_by_class", t => t
                     .Field(f => f.Class.Suffix("keyword"))

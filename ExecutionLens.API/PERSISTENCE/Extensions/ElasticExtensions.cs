@@ -1,31 +1,87 @@
-﻿using ExecutionLens.API.DOMAIN.Models;
+﻿using ExecutionLens.API.DOMAIN.DTOs;
+using ExecutionLens.API.DOMAIN.Models;
 using Nest;
 
 namespace ExecutionLens.API.PERSISTENCE.Extensions;
 
 public static class ElasticExtensions
 {
-    public static SearchDescriptor<T> BetweenDates<T>(this SearchDescriptor<T> searchDescriptor, DateTime? dateStart, DateTime? dateEnd) where T : MethodLog
+    public static SearchDescriptor<MethodLog> ApplyFilters(this SearchDescriptor<MethodLog> descriptor, GraphFilters filters, QueryContainer? existingQuery = null)
     {
-        return searchDescriptor.Query(q => q
-        .DateRange(r => r
-            .Field(f => f.EntryTime)
-            .GreaterThanOrEquals(dateStart)
-            .LessThanOrEquals(dateEnd)
-            ));
-    }
-    public static SearchDescriptor<T> WithEndpoints<T>(this SearchDescriptor<T> searchDescriptor, string[]? endpoints) where T : MethodLog
-    {
-        if(endpoints is null || endpoints.Length == 0)
-            return searchDescriptor;
+        return descriptor
+            .Query(q => q
+                .Bool(b => b
+                    .Must(must =>
+                    {
+                        var boolQuery = new BoolQuery();
 
-        throw new NotImplementedException();
-    }
-    public static SearchDescriptor<T> WithControllers<T>(this SearchDescriptor<T> searchDescriptor, string[]? controllers) where T : MethodLog
-    {
-        if (controllers is null || controllers.Length == 0)
-            return searchDescriptor;
+                        if (existingQuery is not null)
+                        {
+                            boolQuery.Must = [existingQuery];
+                        }
 
-        throw new NotImplementedException();
+                        var filterList = new List<QueryContainer>();
+
+                        if (filters.DateStart.HasValue || filters.DateEnd.HasValue)
+                        {
+                            var dateRangeQuery = new DateRangeQuery
+                            {
+                                Field = Infer.Field<MethodLog>(f => f.EntryTime),
+                                GreaterThanOrEqualTo = filters.DateStart.HasValue ? filters.DateStart.Value : null,
+                                LessThanOrEqualTo = filters.DateEnd.HasValue ? filters.DateEnd.Value : null
+                            };
+                            filterList.Add(dateRangeQuery);
+                        }
+
+                        if (filters.Controllers != null && filters.Controllers.Any())
+                        {
+                            filterList.Add(
+                                new TermsQuery
+                                {
+                                    Field = Infer.Field<MethodLog>(f => f.Class.Suffix("keyword")),
+                                    Terms = filters.Controllers
+                                }
+                            );
+                        }
+
+                        if (filters.Endpoints != null && filters.Endpoints.Any())
+                        {
+                            filterList.Add(
+                                new TermsQuery
+                                {
+                                    Field = Infer.Field<MethodLog>(f => f.Method.Suffix("keyword")),
+                                    Terms = filters.Endpoints
+                                }
+                            );
+                        }
+
+                        if (!string.IsNullOrEmpty(filters.IsEntryPoint))
+                        {
+                            if (filters.IsEntryPoint.Equals("Yes", StringComparison.OrdinalIgnoreCase))
+                            {
+                                filterList.Add(
+                                    new BoolQuery
+                                    {
+                                        MustNot = new QueryContainer[] { new ExistsQuery { Field = Infer.Field<MethodLog>(f => f.NodePath) } }
+                                    }
+                                );
+                            }
+                            else if (filters.IsEntryPoint.Equals("No", StringComparison.OrdinalIgnoreCase))
+                            {
+                                filterList.Add(
+                                    new ExistsQuery { Field = Infer.Field<MethodLog>(f => f.NodePath) }
+                                );
+                            }
+                        }
+
+                        if (filterList.Count != 0)
+                        {
+                            boolQuery.Filter = filterList;
+                        }
+
+                        return boolQuery;
+                    })
+                )
+            );
     }
 }

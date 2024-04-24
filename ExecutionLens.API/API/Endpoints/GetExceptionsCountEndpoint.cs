@@ -5,15 +5,15 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace ExecutionLens.API.API.Endpoints;
 
-[HttpGet("logs/GetExceptionsCount")]
+[HttpPost("logs/GetExceptionsCount")]
 [AllowAnonymous]
-public class GetExceptionsCountEndpoint(ILogRepository _logRepository) : EndpointWithoutRequest<List<ExceptionCount>>
+public class GetExceptionsCountEndpoint(ILogRepository _logRepository) : Endpoint<GraphFilters,List<ExceptionCount>>
 {
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(GraphFilters filters,CancellationToken ct)
     {
         try
         {
-            List<ExceptionCount> exceptionCounts = await _logRepository.GetExceptionsCount();
+            List<ExceptionCount> exceptionCounts = await _logRepository.GetExceptionsCount(filters);
             await SendAsync(exceptionCounts, cancellation: ct);
         }
         catch (Exception ex)
