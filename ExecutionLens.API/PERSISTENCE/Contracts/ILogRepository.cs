@@ -11,5 +11,5 @@ public interface ILogRepository
     Task<List<RequestCount>> GetRequestsCount(GraphFilters filters);
     Task<List<string>> GetClassNames();
     Task<List<string>> GetMethodNames(string[] classList);
-    Task<List<NodeExceptionDTO>> GetMethodExceptions(MethodDTO request);
+    Task<MethodExceptionsResponse> GetMethodExceptions(MethodDTO request);
 }

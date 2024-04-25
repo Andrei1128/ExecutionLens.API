@@ -16,6 +16,10 @@ builder.Services
   .AddOptions<ElasticSettings>()
   .Bind(builder.Configuration.GetSection(ElasticSettings.Key));
 
+builder.Services
+  .AddOptions<QuerySettings>()
+  .Bind(builder.Configuration.GetSection(QuerySettings.Key));
+
 string[] corsOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>()!;
 
 builder.Services.AddCors(options =>

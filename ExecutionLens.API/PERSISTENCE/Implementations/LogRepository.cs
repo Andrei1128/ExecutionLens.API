@@ -6,8 +6,6 @@ using ExecutionLens.API.PERSISTENCE.Contracts;
 using ExecutionLens.API.PERSISTENCE.Extensions;
 using Microsoft.Extensions.Options;
 using Nest;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace PostMortem.Persistance.Repositories;
 
@@ -15,14 +13,17 @@ internal class LogRepository : ILogRepository
 {
     private readonly IElasticClient _elasticClient;
     private readonly string _index;
+    private readonly QuerySettings _querySettings;
 
-    public LogRepository(IOptions<ElasticSettings> options)
+    public LogRepository(IOptions<ElasticSettings> elasticSettings, IOptions<QuerySettings> querySettings)
     {
-        ElasticSettings elasticSettings = options.Value;
+        _querySettings = querySettings.Value;
 
-        _index = elasticSettings.IndexName;
+        ElasticSettings _elasticSettings = elasticSettings.Value;
 
-        var connectionSettings = new ConnectionSettings(new Uri(elasticSettings.Uri))
+        _index = _elasticSettings.IndexName;
+
+        var connectionSettings = new ConnectionSettings(new Uri(_elasticSettings.Uri))
             .DefaultIndex(_index)
             .ThrowExceptions();
 
@@ -346,9 +347,10 @@ internal class LogRepository : ILogRepository
         return methodNames;
     }
 
-    public async Task<List<NodeExceptionDTO>> GetMethodExceptions(MethodDTO method)
+    public async Task<MethodExceptionsResponse> GetMethodExceptions(MethodDTO method)
     {
-        // Specify the class and method you are interested in
+        int pageSize = _querySettings.ExceptionsPageSize; 
+
         var response = await _elasticClient.SearchAsync<MethodLog>(s => s
             .Query(q => q
                 .Bool(b => b
@@ -359,6 +361,9 @@ internal class LogRepository : ILogRepository
                     )
                 )
             )
+            .Sort(st => st.Descending(f => f.ExitTime))
+            .From(method.Page  * pageSize)
+            .Size(pageSize)
             .Source(src => src
                 .Includes(i => i
                     .Fields(
@@ -369,23 +374,24 @@ internal class LogRepository : ILogRepository
             )
         );
 
-        List<NodeExceptionDTO> exceptions = [];
+        var result = new MethodExceptionsResponse()
+        {
+            TotalEntries = response.Total
+        };
 
-        // Handling response and errors
         if (response.IsValid)
         {
             foreach (var hit in response.Hits)
             {
                 var document = hit.Source;
-                var documentId = hit.Id; // Access the document ID
+                var documentId = hit.Id; 
 
-                exceptions.Add(new NodeExceptionDTO
+                result.Exceptions.Add(new NodeExceptionDTO
                 {
                     NodeId = documentId,
                     OccuredAt = document.ExitTime,
                     Exception = document.Output
                 });
-                Console.WriteLine($"Document ID: {documentId}, EntryTime: {document.EntryTime}, Output: {document.Output}");
             }
         }
         else
@@ -393,6 +399,6 @@ internal class LogRepository : ILogRepository
             Console.WriteLine($"Query failed: {response.DebugInformation}");
         }
 
-        return exceptions;
+        return result;
     }
 }

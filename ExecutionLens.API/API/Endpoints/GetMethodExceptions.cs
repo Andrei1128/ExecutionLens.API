@@ -7,13 +7,13 @@ namespace ExecutionLens.API.API.Endpoints;
 
 [HttpGet("logs/GetMethodExceptions")]
 [AllowAnonymous]
-public class GetMethodExceptions(ILogRepository _logRepository) : Endpoint<MethodDTO,List<NodeExceptionDTO>>
+public class GetMethodExceptions(ILogRepository _logRepository) : Endpoint<MethodDTO, MethodExceptionsResponse>
 {
-    public override async Task HandleAsync(MethodDTO request,CancellationToken ct)
+    public override async Task HandleAsync(MethodDTO request, CancellationToken ct)
     {
         try
         {
-            List<NodeExceptionDTO> exceptions = await _logRepository.GetMethodExceptions(request);
+            MethodExceptionsResponse exceptions = await _logRepository.GetMethodExceptions(request);
             await SendAsync(exceptions, cancellation: ct);
         }
         catch (Exception ex)
