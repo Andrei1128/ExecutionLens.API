@@ -6,6 +6,7 @@ using ExecutionLens.API.PERSISTENCE.Contracts;
 using ExecutionLens.API.PERSISTENCE.Extensions;
 using Microsoft.Extensions.Options;
 using Nest;
+using System;
 
 namespace PostMortem.Persistance.Repositories;
 
@@ -30,13 +31,195 @@ internal class LogRepository : ILogRepository
         _elasticClient = new ElasticClient(connectionSettings);
     }
 
+    public async Task<IEnumerable<MethodLog>> Export(SearchFilter filters)
+    {
+        var sortOrder = filters.OrderBy switch
+        {
+            "Date Ascending" => new FieldSort { Field = Infer.Field<MethodLog>(f => f.EntryTime), Order = SortOrder.Ascending },
+            "Date Descending" => new FieldSort { Field = Infer.Field<MethodLog>(f => f.EntryTime), Order = SortOrder.Descending },
+            "Score Ascending" => new FieldSort { Field = "_score", Order = SortOrder.Ascending },
+            "Score Descending" => new FieldSort { Field = "_score", Order = SortOrder.Descending },
+            _ => new FieldSort { Field = Infer.Field<MethodLog>(f => f.EntryTime), Order = SortOrder.Descending }
+        };
+
+        var response = await _elasticClient.SearchAsync<MethodLog>(s => s
+            .ApplySearchFilters(filters)
+            .Size(10_000)
+            .Sort(ss => ss.Field(f => sortOrder))
+        );
+
+        Console.WriteLine(response.Documents.Count);
+
+        return response.Documents;
+    }
+
+    private QueryContainer BuildQuery(List<AdvancedFilter>? filters)
+    {
+        var query = new QueryContainer();
+
+        if (filters is null)
+            return query;
+
+        var filterGroups = filters.GroupBy(g => g.Target);
+
+        foreach (var group in filterGroups)
+        {
+            Field target = GetField(group.Key.ToLower());
+                
+            var must = new QueryContainer();
+            var mustNot = new QueryContainer();
+
+            foreach (var filter in group)
+            {
+                if (filter.Operation.Equals("is", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    must |= new TermQuery { Field = $"{target}.keyword", Value = filter.Value };
+                }
+                else if (filter.Operation.Equals("contains", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    must |= new MatchQuery { Field = target, Query = filter.Value}; 
+                }
+                else if (filter.Operation.Equals("like", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    must |= new WildcardQuery { Field = target, Wildcard = $"*{filter.Value}*" };
+                }
+                else if (filter.Operation.Equals("not", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    must |= !new TermQuery { Field = $"{target}.keyword", Value = filter.Value };
+                }
+                else if (filter.Operation.Equals("not contains", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    must |= !new MatchQuery { Field = target, Query = filter.Value};
+                }
+                else if (filter.Operation.Equals("not like", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    must |= !new WildcardQuery { Field = target, Wildcard = $"*{filter.Value}*" };
+                }
+            }
+
+            query &= new BoolQuery
+            {
+                Should = new List<QueryContainer> { must },
+            };
+        }
+
+        return query;
+    }
+
+    private string GetField(string name)
+    {
+        return name switch
+        {
+            "input" => "input.value",
+            "output" => "output.value",
+            "information" => "informations.message",
+            _ => throw new ArgumentException("Unsupported operation"),
+        };
+    }
+
+    public async Task<GetNodesResponse> Search(SearchFilter filters)
+    {
+        var sortOrder = filters.OrderBy switch
+        {
+            "Date Ascending" => new FieldSort { Field = Infer.Field<MethodLog>(f => f.EntryTime), Order = SortOrder.Ascending },
+            "Date Descending" => new FieldSort { Field = Infer.Field<MethodLog>(f => f.EntryTime), Order = SortOrder.Descending },
+            "Score Ascending" => new FieldSort { Field = "_score", Order = SortOrder.Ascending },
+            "Score Descending" => new FieldSort { Field = "_score", Order = SortOrder.Descending },
+            _ => new FieldSort { Field = Infer.Field<MethodLog>(f => f.EntryTime), Order = SortOrder.Descending }
+        };
+
+        var advancedFilters = BuildQuery(filters.Filters);
+
+        var response = await _elasticClient.SearchAsync<MethodLog>(s => s
+            .ApplySearchFilters(filters, advancedFilters)
+            .Sort(ss => ss.Field(f => sortOrder))
+            .From(filters.PageNo * filters.PageSize)
+            .Size(filters.PageSize)
+        );
+
+        var result = new List<NodeOverview>();
+
+        foreach (var hit in response.Hits)
+        {
+            Console.WriteLine(hit.Score);
+            result.Add(new NodeOverview
+            {
+                Id = hit.Id,
+                Class = hit.Source.Class,
+                Method = hit.Source.Method,
+                EntryTime = hit.Source.EntryTime,
+                ExitTime = hit.Source.ExitTime,
+                HasException = hit.Source.HasException,
+                Duration = hit.Source.ExitTime - hit.Source.EntryTime
+            });
+        }
+
+        return new GetNodesResponse()
+        {
+            Nodes = result,
+            TotalEntries = response.Total
+        };
+    }
+
+    public async Task<NodeOverview?> GetNode(string id)
+    {
+        var result = (await _elasticClient.GetAsync<MethodLog>(id, idx => idx.Index(_index))).Source;
+
+        if (result is null)
+        {
+            return null;
+        }
+
+        return new NodeOverview()
+        {
+            Id = id,
+            Class = result.Class,
+            Method = result.Method,
+            EntryTime = result.EntryTime,
+            ExitTime = result.ExitTime,
+            HasException = result.HasException,
+            Duration = result.ExitTime - result.EntryTime
+        };
+    }
+
+    public async Task SaveSearch(SavedSearch search)
+    {
+        search.SavedAt = DateTime.Now;
+        var response = await _elasticClient.IndexAsync(search, idx => idx.Index($"{_index}_searches"));
+        Console.Write(response);
+    }
+
+    public async Task<IEnumerable<SavedSearch>> GetSavedSearches()
+    {
+        var searchResponse = await _elasticClient.SearchAsync<SavedSearch>(s => s
+            .Index($"{_index}_searches")
+            .Size(1000)
+            .Sort(sort => sort
+                .Descending(ss => ss.SavedAt))
+        );
+
+        var results = searchResponse.Hits.Select(hit =>
+        {
+            var savedSearch = hit.Source;
+            savedSearch.Id = hit.Id;
+            return savedSearch;
+        });
+
+        return results;
+    }
+
+    public async Task DeleteSavedSearch(string id)
+    {
+        var deleteResponse = await _elasticClient.DeleteAsync<SavedSearch>(id, d => d.Index($"{_index}_searches"));
+    }
+
     private IEnumerable<MethodLog> GetAllNodes(string rootId)
     {
         var response = _elasticClient.Search<MethodLog>(s => s
             .Query(q => q
                 .Bool(b => b
                     .Should(
-                        sh => sh.Ids(i => i.Values(rootId)), 
+                        sh => sh.Ids(i => i.Values(rootId)),
                         sh => sh.Prefix(p => p.NodePath, rootId)
                     )
                 )
@@ -93,7 +276,7 @@ internal class LogRepository : ILogRepository
 
     public async Task<List<ExecutionTimes>> GetExecutionTimes(GraphFilters filters)
     {
-        var response = await  _elasticClient.SearchAsync<MethodLog>(s => s
+        var response = await _elasticClient.SearchAsync<MethodLog>(s => s
     .Size(0)  // No documents are needed in the response, only aggregations
     .ApplyFilters(filters)
     .Aggregations(a => a
@@ -106,7 +289,7 @@ internal class LogRepository : ILogRepository
                         .ScriptedMetric("execution_time_stats", sm => sm
                             .InitScript("state.durations = []")  // Initialize state to hold durations
                             .MapScript("state.durations.add(doc['exitTime'].value.getMillis() - doc['entryTime'].value.getMillis());")  // Map script to calculate and collect durations
-                            //MapScript("state.durations.add(doc['ExitTime'].value.getMillis() - doc['EntryTime'].value.getMillis());")  // Map script to calculate and 
+                                                                                                                                        //MapScript("state.durations.add(doc['ExitTime'].value.getMillis() - doc['EntryTime'].value.getMillis());")  // Map script to calculate and 
                             .CombineScript("double min = Double.POSITIVE_INFINITY; double max = Double.NEGATIVE_INFINITY; double sum = 0;" +
                                            "for (t in state.durations) {" +
                                            "  min = Math.min(min, t);" +
@@ -218,7 +401,7 @@ internal class LogRepository : ILogRepository
                 currentNodesIds.Add(document.Id);
             }
 
-            for(int i = 0; i < parent.Interactions.Count; i++)
+            for (int i = 0; i < parent.Interactions.Count; i++)
             {
                 await PopulateChildren(parent.Interactions[i], $"{path}/{currentNodesIds[i]}");
             }
@@ -275,7 +458,7 @@ internal class LogRepository : ILogRepository
             .Aggregations(a => a
                 .Terms("unique_classes", terms => terms
                     .Field(f => f.Class.Suffix("keyword"))  // Assumes there's a 'keyword' sub-field for exact matching
-                     // Adjust this size to the expected number of unique classes, or use a larger value
+                                                            // Adjust this size to the expected number of unique classes, or use a larger value
                 )
             )
         );
@@ -349,7 +532,7 @@ internal class LogRepository : ILogRepository
 
     public async Task<MethodExceptionsResponse> GetMethodExceptions(MethodDTO method)
     {
-        int pageSize = _querySettings.ExceptionsPageSize; 
+        int pageSize = _querySettings.ExceptionsPageSize;
 
         var response = await _elasticClient.SearchAsync<MethodLog>(s => s
             .Query(q => q
@@ -362,7 +545,7 @@ internal class LogRepository : ILogRepository
                 )
             )
             .Sort(st => st.Descending(f => f.ExitTime))
-            .From(method.Page  * pageSize)
+            .From(method.Page * pageSize)
             .Size(pageSize)
             .Source(src => src
                 .Includes(i => i
@@ -384,7 +567,7 @@ internal class LogRepository : ILogRepository
             foreach (var hit in response.Hits)
             {
                 var document = hit.Source;
-                var documentId = hit.Id; 
+                var documentId = hit.Id;
 
                 result.Exceptions.Add(new NodeExceptionDTO
                 {
