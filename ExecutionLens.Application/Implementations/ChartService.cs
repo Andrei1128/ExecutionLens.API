@@ -1,6 +1,5 @@
 ﻿using ExecutionLens.Application.Contracts;
 using ExecutionLens.Domain.Extensions;
-using ExecutionLens.Domain.Enums;
 using ExecutionLens.Domain.Models;
 using ExecutionLens.Domain.Models.Requests;
 using ExecutionLens.Domain.Models.Responses;
