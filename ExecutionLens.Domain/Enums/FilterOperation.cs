@@ -3,9 +3,9 @@
 public enum FilterOperation
 {
     Is,
-    Contains,
-    Like,
     IsNot,
+    Contains,
     NotContains,
+    Like,
     NotLike
 }

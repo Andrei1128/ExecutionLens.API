@@ -1,6 +1,5 @@
 ﻿using ExecutionLens.Domain.Enums;
 using Nest;
-using System.Text.Json.Serialization;
 
 namespace ExecutionLens.Domain.Models.Requests;
 
@@ -13,13 +12,7 @@ public class SearchFilter
     public string[]? Methods { get; set; }
     public BinaryChoice HasException { get; set; }
     public OrderBy OrderBy { get; set; }
-
-    [Ignore]
-    [JsonIgnore]
     public int? PageSize { get; set; } = 12;
-
-    [Ignore]
-    [JsonIgnore]
     public int? PageNo { get; set; } = 0;
     public string? Id { get; set; }
 }
