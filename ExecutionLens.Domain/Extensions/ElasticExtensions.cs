@@ -68,7 +68,7 @@ public static class ElasticExtensions
                             filterList.Add(
                                 new TermsQuery
                                 {
-                                    Field = Infer.Field<MethodLog>(f => f.Class.Suffix(nameof(ElasticTerm.keyword))),
+                                    Field = Infer.Field<MethodLog>(f => f.Class.Suffix("keyword")),
                                     Terms = filters.Classes
                                 }
                             );
@@ -79,7 +79,7 @@ public static class ElasticExtensions
                             filterList.Add(
                                 new TermsQuery
                                 {
-                                    Field = Infer.Field<MethodLog>(f => f.Method.Suffix(nameof(ElasticTerm.keyword))),
+                                    Field = Infer.Field<MethodLog>(f => f.Method.Suffix("keyword")),
                                     Terms = filters.Methods
                                 }
                             );
@@ -149,7 +149,7 @@ public static class ElasticExtensions
                             filterList.Add(
                                 new TermsQuery
                                 {
-                                    Field = Infer.Field<MethodLog>(f => f.Class.Suffix(nameof(ElasticTerm.keyword))),
+                                    Field = Infer.Field<MethodLog>(f => f.Class.Suffix("keyword")),
                                     Terms = filters.Classes
                                 }
                             );
@@ -160,7 +160,7 @@ public static class ElasticExtensions
                             filterList.Add(
                                 new TermsQuery
                                 {
-                                    Field = Infer.Field<MethodLog>(f => f.Method.Suffix(nameof(ElasticTerm.keyword))),
+                                    Field = Infer.Field<MethodLog>(f => f.Method.Suffix("keyword")),
                                     Terms = filters.Methods
                                 }
                             );

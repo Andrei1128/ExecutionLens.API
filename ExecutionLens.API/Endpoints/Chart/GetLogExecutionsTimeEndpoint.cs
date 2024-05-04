@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace ExecutionLens.API.Endpoints.Chart;
 
 [AllowAnonymous]
-[HttpPost("Chart/GetLogExecutionsTime")]
+[HttpGet("Chart/GetLogExecutionsTime/{Id}")]
 public class GetLogExecutionsTimeEndpoint(IChartService _chartService) : Endpoint<IdRequest, List<ExecutionTime>>
 {
     public override async Task HandleAsync(IdRequest request, CancellationToken ct)

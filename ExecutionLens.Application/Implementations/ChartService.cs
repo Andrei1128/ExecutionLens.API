@@ -13,13 +13,31 @@ internal class ChartService(IElasticClient _elasticClient) : IChartService
 {
     public async Task<List<ExecutionTime>> GetLogExecutionsTime(string nodeId)
     {
+        var result = await _elasticClient.GetAsync<MethodLog>(nodeId);
+
+        if (!result.Found)
+        {
+            return [];
+        }
+
+        var node = result.Source;
+
+        bool isRoot = node.NodePath is null;
+
+        if (!isRoot)
+        {
+            string rootId = node.NodePath!.Split('/').First();
+
+            var rootResult = await _elasticClient.GetAsync<MethodLog>(rootId);
+            nodeId = rootResult.Id;
+        }
+
         var response = await _elasticClient.SearchAsync<MethodLog>(s => s
             .Query(q => q
                 .Bool(b => b
                     .Should(
                         sh => sh.Ids(i => i.Values(nodeId)),
-                        sh => sh.Prefix(p => p.NodePath, nodeId)
-                    )
+                        sh => sh.Prefix(p => p.Field("nodePath.keyword").Value(nodeId)))
                 )
             )
         );
@@ -35,7 +53,7 @@ internal class ChartService(IElasticClient _elasticClient) : IChartService
             {
                 Class = methodLog.Class,
                 Method = methodLog.Method,
-                Time = timeDifference
+                Time = timeDifference.TotalMilliseconds
             });
         }
 
@@ -48,11 +66,11 @@ internal class ChartService(IElasticClient _elasticClient) : IChartService
             .Size(0)
             .ApplyFilters(filters)
             .Aggregations(a => a
-                .Terms(nameof(ElasticTerm.classGroup), t => t
-                    .Field(f => f.Class.Suffix(nameof(ElasticTerm.keyword)))
+                .Terms("groupByClass", t => t
+                    .Field(f => f.Class.Suffix("keyword"))
                     .Aggregations(aa => aa
-                        .Terms(nameof(ElasticTerm.methodGroup), tt => tt
-                            .Field(ff => ff.Method.Suffix(nameof(ElasticTerm.keyword)))
+                        .Terms("groupByMethod", tt => tt
+                            .Field(ff => ff.Method.Suffix("keyword"))
                         )
                     )
                 )
@@ -61,11 +79,11 @@ internal class ChartService(IElasticClient _elasticClient) : IChartService
 
         List<RequestCount> requestCounts = [];
 
-        var groupByClass = response.Aggregations.Terms(nameof(ElasticTerm.classGroup));
+        var groupByClass = response.Aggregations.Terms("groupByClass");
 
         foreach (var classGroup in groupByClass.Buckets)
         {
-            var groupByMethod = classGroup.Terms(nameof(ElasticTerm.methodGroup));
+            var groupByMethod = classGroup.Terms("groupByMethod");
 
             foreach (var methodGroup in groupByMethod.Buckets)
             {
@@ -95,11 +113,11 @@ internal class ChartService(IElasticClient _elasticClient) : IChartService
             .Size(0)
             .ApplyFilters(filters, withExceptionsFilter)
             .Aggregations(a => a
-                .Terms(nameof(ElasticTerm.classGroup), group => group
-                    .Field(f => f.Class.Suffix(nameof(ElasticTerm.keyword)))
+                .Terms("groupByClass", group => group
+                    .Field(f => f.Class.Suffix("keyword"))
                     .Aggregations(subAgg => subAgg
-                        .Terms(nameof(ElasticTerm.methodGroup), subGroup => subGroup
-                            .Field(f => f.Method.Suffix(nameof(ElasticTerm.keyword)))
+                        .Terms("groupByMethod", subGroup => subGroup
+                            .Field(f => f.Method.Suffix("keyword"))
                         )
                     )
                 )
@@ -108,11 +126,11 @@ internal class ChartService(IElasticClient _elasticClient) : IChartService
 
         List<ExceptionCount> exceptionCounts = [];
 
-        var groupByClass = response.Aggregations.Terms(nameof(ElasticTerm.classGroup));
+        var groupByClass = response.Aggregations.Terms("groupByClass");
 
         foreach (var classGroup in groupByClass.Buckets)
         {
-            var groupByMethod = classGroup.Terms(nameof(ElasticTerm.methodGroup));
+            var groupByMethod = classGroup.Terms("groupByMethod");
 
             foreach (var methodGroup in groupByMethod.Buckets)
             {
@@ -136,11 +154,11 @@ internal class ChartService(IElasticClient _elasticClient) : IChartService
             .Size(0)
             .ApplyFilters(filters)
             .Aggregations(a => a
-                .Terms(nameof(ElasticTerm.classGroup), classAgg => classAgg
-                    .Field(f => f.Class.Suffix(nameof(ElasticTerm.keyword)))
+                .Terms("groupByClass", classAgg => classAgg
+                    .Field(f => f.Class.Suffix("keyword"))
                     .Aggregations(classSubAgg => classSubAgg
-                        .Terms(nameof(ElasticTerm.methodGroup), methodAgg => methodAgg
-                            .Field(f => f.Method.Suffix(nameof(ElasticTerm.keyword)))
+                        .Terms("groupByMethod", methodAgg => methodAgg
+                            .Field(f => f.Method.Suffix("keyword"))
                             .Aggregations(methodSubAgg => methodSubAgg
                                 .ScriptedMetric(ExecutionTimesScript.Name, sm => sm
                                     .InitScript(ExecutionTimesScript.Init)
@@ -157,11 +175,11 @@ internal class ChartService(IElasticClient _elasticClient) : IChartService
 
         List<ExecutionTimes> executionTimes = [];
 
-        var groupByClass = response.Aggregations.Terms(nameof(ElasticTerm.classGroup));
+        var groupByClass = response.Aggregations.Terms("groupByClass");
 
         foreach (var classGroup in groupByClass.Buckets)
         {
-            var groupByMethod = classGroup.Terms(nameof(ElasticTerm.methodGroup));
+            var groupByMethod = classGroup.Terms("groupByMethod");
 
             foreach (var methodGroup in groupByMethod.Buckets)
             {
