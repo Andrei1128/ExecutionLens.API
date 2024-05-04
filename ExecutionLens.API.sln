@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34714.143
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExecutionLens.API", "ExecutionLens.API\ExecutionLens.API.csproj", "{F1E3DED6-DC23-450C-AEEA-DF9F4DDC702E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExecutionLens.API", "ExecutionLens.API\ExecutionLens.API.csproj", "{F1E3DED6-DC23-450C-AEEA-DF9F4DDC702E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExecutionLens.Application", "ExecutionLens.Application\ExecutionLens.Application.csproj", "{EE259CF6-24D7-4584-8EB5-5275D9E93192}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExecutionLens.Domain", "ExecutionLens.Domain\ExecutionLens.Domain.csproj", "{CA33FA42-80A7-4F4F-9AC9-3744A6E8E51C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{F1E3DED6-DC23-450C-AEEA-DF9F4DDC702E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1E3DED6-DC23-450C-AEEA-DF9F4DDC702E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1E3DED6-DC23-450C-AEEA-DF9F4DDC702E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE259CF6-24D7-4584-8EB5-5275D9E93192}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE259CF6-24D7-4584-8EB5-5275D9E93192}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE259CF6-24D7-4584-8EB5-5275D9E93192}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE259CF6-24D7-4584-8EB5-5275D9E93192}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA33FA42-80A7-4F4F-9AC9-3744A6E8E51C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA33FA42-80A7-4F4F-9AC9-3744A6E8E51C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA33FA42-80A7-4F4F-9AC9-3744A6E8E51C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA33FA42-80A7-4F4F-9AC9-3744A6E8E51C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

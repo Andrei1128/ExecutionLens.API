@@ -10,7 +10,11 @@
   <ItemGroup>
     <PackageReference Include="FastEndpoints" Version="5.24.0" />
     <PackageReference Include="FastEndpoints.Swagger" Version="5.24.0" />
-    <PackageReference Include="NEST" Version="7.17.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ExecutionLens.Application\ExecutionLens.Application.csproj" />
+    <ProjectReference Include="..\ExecutionLens.Domain\ExecutionLens.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
