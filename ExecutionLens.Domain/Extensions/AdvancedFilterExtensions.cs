@@ -27,7 +27,7 @@ public static class AdvancedFilterExtensions
                 {
                     FilterOperation.Is => new TermQuery
                     {
-                        Field = $"{target}.{nameof(ElasticTerm.keyword)}",
+                        Field = $"{target}.keyword",
                         Value = filter.Value
                     },
                     FilterOperation.Contains => new MatchQuery
@@ -42,7 +42,7 @@ public static class AdvancedFilterExtensions
                     },
                     FilterOperation.IsNot => !new TermQuery
                     {
-                        Field = $"{target}.{nameof(ElasticTerm.keyword)}",
+                        Field = $"{target}.keyword",
                         Value = filter.Value
                     },
                     FilterOperation.NotContains => !new MatchQuery

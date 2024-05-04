@@ -1,5 +1,4 @@
 ﻿using ExecutionLens.Application.Contracts;
-using ExecutionLens.Domain.Enums;
 using ExecutionLens.Domain.Models;
 using ExecutionLens.Domain.Models.Requests;
 using ExecutionLens.Domain.Models.Responses;
@@ -47,7 +46,7 @@ internal class LogService(IElasticClient _elasticClient, IOptions<QuerySettings>
     {
         var searchResponse = await _elasticClient.SearchAsync<MethodLog>(s => s
             .Query(q => q
-                .Term(t => t.Field(f => f.NodePath.Suffix(nameof(ElasticTerm.keyword))).Value(path))
+                .Term(t => t.Field(f => f.NodePath.Suffix("keyword")).Value(path))
             )
         );
 
@@ -66,15 +65,15 @@ internal class LogService(IElasticClient _elasticClient, IOptions<QuerySettings>
         var response = await _elasticClient.SearchAsync<MethodLog>(s => s
             .Size(0)
             .Aggregations(a => a
-                .Terms(nameof(MethodLog.Class), terms => terms
-                    .Field(f => f.Class.Suffix(nameof(ElasticTerm.keyword)))
+                .Terms("class", terms => terms
+                    .Field(f => f.Class.Suffix("keyword"))
                 )
             )
         );
 
         List<string> classNames = [];
 
-        var uniqueClassesAgg = response.Aggregations.Terms(nameof(MethodLog.Class));
+        var uniqueClassesAgg = response.Aggregations.Terms("class");
 
         foreach (var bucket in uniqueClassesAgg.Buckets)
         {
@@ -90,16 +89,16 @@ internal class LogService(IElasticClient _elasticClient, IOptions<QuerySettings>
             .Size(0)
             .Query(q => q
                 .Terms(t => t
-                    .Field(f => f.Class.Suffix(nameof(ElasticTerm.keyword)))
+                    .Field(f => f.Class.Suffix("keyword"))
                     .Terms(classNames)
                 )
             )
             .Aggregations(a => a
-                .Terms(nameof(MethodLog.Class), terms => terms
-                    .Field(f => f.Class.Suffix(nameof(ElasticTerm.keyword)))
+                .Terms("class", terms => terms
+                    .Field(f => f.Class.Suffix("keyword"))
                     .Aggregations(classAgg => classAgg
-                        .Terms(nameof(MethodLog.Method), methodAgg => methodAgg
-                            .Field(f => f.Method.Suffix(nameof(ElasticTerm.keyword)))
+                        .Terms("method", methodAgg => methodAgg
+                            .Field(f => f.Method.Suffix("keyword"))
                         )
                     )
                 )
@@ -108,11 +107,11 @@ internal class LogService(IElasticClient _elasticClient, IOptions<QuerySettings>
 
         List<string> methodNames = [];
 
-        var filteredClassesAgg = response.Aggregations.Terms(nameof(MethodLog.Class));
+        var filteredClassesAgg = response.Aggregations.Terms("class");
 
         foreach (var classBucket in filteredClassesAgg.Buckets)
         {
-            var uniqueMethodsAgg = classBucket.Terms(nameof(MethodLog.Method));
+            var uniqueMethodsAgg = classBucket.Terms("method");
 
             foreach (var methodBucket in uniqueMethodsAgg.Buckets)
             {
@@ -131,8 +130,8 @@ internal class LogService(IElasticClient _elasticClient, IOptions<QuerySettings>
             .Query(q => q
                 .Bool(b => b
                     .Must(
-                        bs => bs.Term(t => t.Field(f => f.Class.Suffix(nameof(ElasticTerm.keyword))).Value(method.Class)),
-                        bs => bs.Term(t => t.Field(f => f.Method.Suffix(nameof(ElasticTerm.keyword))).Value(method.Name)),
+                        bs => bs.Term(t => t.Field(f => f.Class.Suffix("keyword")).Value(method.Class)),
+                        bs => bs.Term(t => t.Field(f => f.Method.Suffix("keyword")).Value(method.Name)),
                         bs => bs.Term(t => t.Field(f => f.HasException).Value(true))
                     )
                 )
