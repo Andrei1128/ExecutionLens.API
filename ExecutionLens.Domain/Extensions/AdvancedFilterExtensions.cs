@@ -37,7 +37,7 @@ public static class AdvancedFilterExtensions
                     },
                     FilterOperation.Like => new WildcardQuery
                     {
-                        Field = target,
+                        Field = $"{target}.keyword",
                         Wildcard = $"*{filter.Value}*"
                     },
                     FilterOperation.IsNot => !new TermQuery
@@ -52,7 +52,7 @@ public static class AdvancedFilterExtensions
                     },
                     FilterOperation.NotLike => !new WildcardQuery
                     {
-                        Field = target,
+                        Field = $"{target}.keyword",
                         Wildcard = $"*{filter.Value}*"
                     },
                     _ => throw new ArgumentOutOfRangeException(nameof(filter.Operation), $"Unsupported filter operation!")

@@ -13,7 +13,7 @@ internal class ExportService(IElasticClient _elasticClient) : IExportService
     {
         var response = await _elasticClient.SearchAsync<MethodLog>(s => s
             .Size(10_000)
-            .ApplySearchFilters(filters)
+            .ApplySearchFilters(filters, filters.Filters?.ToQueryContainer())
             .ApplySort(filters.OrderBy)
         );
 

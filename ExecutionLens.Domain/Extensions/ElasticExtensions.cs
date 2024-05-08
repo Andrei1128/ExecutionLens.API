@@ -49,6 +49,16 @@ public static class ElasticExtensions
                         {
                             boolQuery.Must = [existingQuery];
                         }
+                        else if(filters.Id is not null)
+                        {
+                            boolQuery.Must = [
+                                new TermQuery
+                                    {
+                                        Field = "_id",
+                                        Value = filters.Id
+                                    }
+                                ];
+                        }
 
                         var filterList = new List<QueryContainer>();
 
