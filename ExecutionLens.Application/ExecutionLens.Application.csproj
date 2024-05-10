@@ -10,6 +10,7 @@
 	    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
 	    <PackageReference Include="NEST" Version="7.17.5" />
 	    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.5" />
     </ItemGroup>
 
   <ItemGroup>

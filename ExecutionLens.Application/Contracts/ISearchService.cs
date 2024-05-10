@@ -10,4 +10,5 @@ public interface ISearchService
     Task<IEnumerable<SavedSearch>> GetSavedSearches();
     Task DeleteSavedSearch(string id);
     Task<GetNodesResponse> Search(SearchFilter filters);
+    Task<GetNodesResponse> NLPSearch(string textQuery);
 }

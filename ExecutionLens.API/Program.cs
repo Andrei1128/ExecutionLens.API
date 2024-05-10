@@ -11,11 +11,9 @@ var builder = WebApplication.CreateBuilder();
 builder.Services.AddFastEndpoints()
                 .SwaggerDocument();
 
-builder.Services.AddOptions<ElasticSettings>()
-                .Bind(builder.Configuration.GetSection(ElasticSettings.Key));
-
-builder.Services.AddOptions<QuerySettings>()
-                .Bind(builder.Configuration.GetSection(QuerySettings.Key));
+builder.Services.AddOptions<ElasticSettings>().Bind(builder.Configuration.GetSection(ElasticSettings.Key));
+builder.Services.AddOptions<QuerySettings>().Bind(builder.Configuration.GetSection(QuerySettings.Key));
+builder.Services.AddOptions<OpenAISettings>().Bind(builder.Configuration.GetSection(OpenAISettings.Key));
 
 string[] corsOrigins = builder.Configuration.GetSection("CorsOrigins").Get<string[]>()!;
 

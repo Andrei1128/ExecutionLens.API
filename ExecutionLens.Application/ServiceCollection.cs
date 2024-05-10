@@ -26,6 +26,7 @@ public static class ServiceCollection
         services.AddScoped<IExportService, ExportService>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<ISearchService, SearchService>();
+        services.AddScoped<IOpenAIService, OpenAIService>();
 
         return services;
     }

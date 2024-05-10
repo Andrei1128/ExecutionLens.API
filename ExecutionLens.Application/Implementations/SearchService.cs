@@ -4,11 +4,48 @@ using ExecutionLens.Domain.Models;
 using ExecutionLens.Domain.Models.Requests;
 using ExecutionLens.Domain.Models.Responses;
 using Nest;
+using Newtonsoft.Json;
 
 namespace ExecutionLens.Application.Implementations;
 
-internal class SearchService(IElasticClient _elasticClient) : ISearchService
+internal class SearchService(IElasticClient _elasticClient, IOpenAIService _openAIService) : ISearchService
 {
+    public async Task<GetNodesResponse> NLPSearch(string textQuery)
+    {
+        string jsonFilters =  await _openAIService.GetJsonFromTextQuery(textQuery);
+
+        var filters = JsonConvert.DeserializeObject<SearchFilter>(jsonFilters)!;
+
+        var response = await _elasticClient.SearchAsync<MethodLog>(s => s
+           .ApplySearchFilters(filters, filters.Filters?.ToQueryContainer())
+           .ApplySort(filters.OrderBy)
+           .From(filters.PageNo * filters.PageSize)
+           .Size(filters.PageSize)
+       );
+
+        var result = new List<NodeOverview>();
+
+        foreach (var hit in response.Hits)
+        {
+            result.Add(new NodeOverview
+            {
+                Id = hit.Id,
+                Class = hit.Source.Class,
+                Method = hit.Source.Method,
+                EntryTime = hit.Source.EntryTime,
+                ExitTime = hit.Source.ExitTime,
+                HasException = hit.Source.HasException,
+                Duration = hit.Source.ExitTime - hit.Source.EntryTime
+            });
+        }
+
+        return new GetNodesResponse()
+        {
+            Nodes = result,
+            TotalEntries = response.Total
+        };
+    }
+
     public async Task<GetNodesResponse> Search(SearchFilter filters)
     {
         var response = await _elasticClient.SearchAsync<MethodLog>(s => s

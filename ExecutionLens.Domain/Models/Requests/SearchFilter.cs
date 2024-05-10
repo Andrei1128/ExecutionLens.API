@@ -1,5 +1,4 @@
 ﻿using ExecutionLens.Domain.Enums;
-using Nest;
 
 namespace ExecutionLens.Domain.Models.Requests;
 
