@@ -22,11 +22,18 @@ public static class ServiceCollection
             return new ElasticClient(conSettings);
         });
 
+        services.AddHttpClient<IOpenAIService,OpenAIService>((provider, client) =>
+        {
+            var settings = provider.GetRequiredService<IOptions<OpenAISettings>>().Value;
+
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {settings.ApiKey}");
+            client.BaseAddress = new Uri(settings.Uri);
+        });
+
         services.AddScoped<IChartService, ChartService>();
         services.AddScoped<IExportService, ExportService>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<ISearchService, SearchService>();
-        services.AddScoped<IOpenAIService, OpenAIService>();
 
         return services;
     }

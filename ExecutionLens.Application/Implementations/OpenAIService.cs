@@ -1,32 +1,38 @@
 ﻿using ExecutionLens.Application.Contracts;
-using Azure;
-using Azure.AI.OpenAI;
-using ExecutionLens.Domain.Utilities;
-using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace ExecutionLens.Application.Implementations;
 
-internal class OpenAIService(IOptions<OpenAISettings> _openAISettings) : IOpenAIService
+internal class OpenAIService(HttpClient _openAIClient) : IOpenAIService
 {
     public async Task<string> GetJsonFromTextQuery(string textQuery)
     {
-        OpenAIClient client = new(
-            new Uri(_openAISettings.Value.Uri),
-            new AzureKeyCredential(_openAISettings.Value.ApiKey));
-
-        Response<ChatCompletions> responseWithoutStream = await client.GetChatCompletionsAsync(
-            _openAISettings.Value.DeploymentOrModel,
-            new ChatCompletionsOptions()
-            {
-                Messages =
+        var request = new
+        {
+            model = "gpt-4",
+            messages = new[]
                 {
-                  new ChatMessage(ChatRole.System, CreateSystemMessage(DateTime.Now)),
-                  new ChatMessage(ChatRole.User, textQuery)
+                    new { role = "system", content = CreateSystemMessage(DateTime.Now) },
+                    new { role = "user", content = textQuery }
                 }
-            });
+        };
 
-        ChatCompletions response = responseWithoutStream.Value;
-        return response.Choices[0].Message.Content;
+        string jsonRequest = JsonConvert.SerializeObject(request);
+        var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+        HttpResponseMessage response = await _openAIClient.PostAsync("v1/chat/completions", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseContent = await response.Content.ReadAsStringAsync();
+            var result = JsonConvert.DeserializeObject<dynamic>(responseContent)!;
+            return result.choices[0].message.content;
+        }
+        else
+        {
+            return $"Error performing search. Status code: {response.StatusCode}";
+        }
     }
 
     private string CreateSystemMessage(DateTime currentDate)
@@ -83,6 +89,8 @@ internal class OpenAIService(IOptions<OpenAISettings> _openAISettings) : IOpenAI
             }}
             ---
             Note that:
+             - you have to respond only with the json representation  
+             - default enum value is the first value in the enum
              - current date is {currentDate}";
     }
 }
