@@ -67,8 +67,8 @@ public static class ElasticExtensions
                             var dateRangeQuery = new DateRangeQuery
                             {
                                 Field = Infer.Field<MethodLog>(f => f.EntryTime),
-                                GreaterThanOrEqualTo = filters.DateStart.HasValue ? filters.DateStart.Value : null,
-                                LessThanOrEqualTo = filters.DateEnd.HasValue ? filters.DateEnd.Value : null
+                                GreaterThanOrEqualTo = filters.DateStart.HasValue ? filters.DateStart.Value.NormalizeTime(0,0,0) : null,
+                                LessThanOrEqualTo = filters.DateEnd.HasValue ? filters.DateEnd.Value.NormalizeTime(23, 59, 59) : null
                             };
                             filterList.Add(dateRangeQuery);
                         }
@@ -148,8 +148,8 @@ public static class ElasticExtensions
                             var dateRangeQuery = new DateRangeQuery
                             {
                                 Field = Infer.Field<MethodLog>(f => f.EntryTime),
-                                GreaterThanOrEqualTo = filters.DateStart.HasValue ? filters.DateStart.Value : null,
-                                LessThanOrEqualTo = filters.DateEnd.HasValue ? filters.DateEnd.Value : null
+                                GreaterThanOrEqualTo = filters.DateStart.HasValue ? filters.DateStart.Value.NormalizeTime(0, 0, 0) : null,
+                                LessThanOrEqualTo = filters.DateEnd.HasValue ? filters.DateEnd.Value.NormalizeTime(23, 59, 59) : null
                             };
                             filterList.Add(dateRangeQuery);
                         }
