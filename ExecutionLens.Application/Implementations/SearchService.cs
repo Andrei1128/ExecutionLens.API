@@ -10,11 +10,16 @@ namespace ExecutionLens.Application.Implementations;
 
 internal class SearchService(IElasticClient _elasticClient, IOpenAIService _openAIService) : ISearchService
 {
-    public async Task<GetNodesResponse> NLPSearch(string textQuery)
+    public async Task<NLPSearchResponse> NLPSearch(string textQuery)
     {
         string jsonFilters = await _openAIService.GetJsonFromTextQuery(textQuery);
 
         var filters = JsonConvert.DeserializeObject<SearchFilter>(jsonFilters)!;
+
+        var result = new NLPSearchResponse
+        {
+            Filters = filters
+        };
 
         var response = await _elasticClient.SearchAsync<MethodLog>(s => s
            .ApplySearchFilters(filters, filters.Filters?.ToQueryContainer())
@@ -23,11 +28,11 @@ internal class SearchService(IElasticClient _elasticClient, IOpenAIService _open
            .Size(filters.PageSize)
        );
 
-        var result = new List<NodeOverview>();
+        var resultData = new List<NodeOverview>();
 
         foreach (var hit in response.Hits)
         {
-            result.Add(new NodeOverview
+            resultData.Add(new NodeOverview
             {
                 Id = hit.Id,
                 Class = hit.Source.Class,
@@ -39,11 +44,13 @@ internal class SearchService(IElasticClient _elasticClient, IOpenAIService _open
             });
         }
 
-        return new GetNodesResponse()
+        result.Result = new GetNodesResponse()
         {
-            Nodes = result,
+            Nodes = resultData,
             TotalEntries = response.Total
         };
+
+        return result;
     }
 
     public async Task<GetNodesResponse> Search(SearchFilter filters)
