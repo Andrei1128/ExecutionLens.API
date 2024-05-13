@@ -13,8 +13,19 @@ internal class SearchService(IElasticClient _elasticClient, IOpenAIService _open
     public async Task<NLPSearchResponse> NLPSearch(string textQuery)
     {
         string jsonFilters = await _openAIService.GetJsonFromTextQuery(textQuery);
+        SearchFilter filters = null!;
 
-        var filters = JsonConvert.DeserializeObject<SearchFilter>(jsonFilters)!;
+        try
+        {
+            filters = JsonConvert.DeserializeObject<SearchFilter>(jsonFilters)!;
+        }
+        catch
+        {
+            return new NLPSearchResponse
+            {
+                Error = jsonFilters
+            };
+        }
 
         var result = new NLPSearchResponse
         {

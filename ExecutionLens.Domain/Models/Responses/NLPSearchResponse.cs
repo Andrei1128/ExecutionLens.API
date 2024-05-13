@@ -6,4 +6,5 @@ public class NLPSearchResponse
 {
     public GetNodesResponse? Result { get; set; }
     public SearchFilter? Filters { get; set; }
+    public string? Error { get; set; }
 }
